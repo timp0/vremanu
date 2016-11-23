@@ -29,6 +29,13 @@ krak.top=filter(krak.report, rank.code=="S") %>%
     select(sci.name, ncbi.tax.id) %>%
     distinct
 
+##ok - of these top hits, get the max num reads per
+krak.report %>%
+    filter(ncbi.tax.id %in% krak.top$ncbi.tax.id) %>%
+    group_by(sci.name) %>%
+    summarise(big.reads=max(num.reads.clade))
+
+
 ##ok - per group other bacteria calc
 ##ncbi.tax.id 2 is all bacteria
 plot.res=filter(krak.report, ncbi.tax.id %in% c(2, krak.top$ncbi.tax.id)) %>%
@@ -67,13 +74,18 @@ plot.res %>%
     summarize(n=sum(per.reads))
 ##Pretty close - rounding errors only
 
-##Ok - committ this
 
 
-pdf(file.path(plotdir, "stack.pdf"))
 
-ggplot(plot.res, aes(x=sample, y=num.reads.clade, fill=sci.name))+geom_bar(stat='identity')+theme_bw()
-ggplot(plot.res, aes(x=sample, y=per.reads, fill=sci.name))+geom_bar(stat='identity')+theme_bw()
+##Ok - need legend on bottom
+##need better(more different) color scheme
+##need smaples in order (VRE10)
+
+pdf(file.path(plotdir, "stack.pdf"), width=11, height=8.5)
+
+##ggplot(plot.res, aes(x=sample, y=num.reads.clade, fill=sci.name))+geom_bar(stat='identity')+theme_bw()
+ggplot(plot.res, aes(x=sample, y=per.reads, fill=sci.name))+geom_bar(color="black", stat='identity')+
+    scale_fill_hue()+theme_bw()+theme(legend.position="bottom")
 
 dev.off()
 

@@ -2,7 +2,7 @@ library(Biostrings)
 library(ggplot2)
 library(dplyr)
 library(ggExtra)
-
+library(GenomicAlignments)
 
 plotdir="~/Dropbox/Data/Nanopore/161110_vrepaper"
 
@@ -15,13 +15,17 @@ card.tab=read.csv(file.path(card.dir, "aro.csv"), stringsAsFactors=F)
 
 workdir="/atium/Data/Nanopore/Analysis/161102_vrecontext/VRE7db"
 
-blast.res=read.delim(file.path(workdir, "blastry2"), stringsAsFactors=F, header=F, col.names=blast.cols)
+if (FALSE) {
 
-nano.reads=readDNAStringSet(file.path(workdir, "160223_VRE7_recall_2dhq.fa"))
+    blast.res=read.delim(file.path(workdir, "blastry2"), stringsAsFactors=F, header=F, col.names=blast.cols)
+    
+    nano.reads=readDNAStringSet(file.path(workdir, "160223_VRE7_recall_2dhq.fa"))
+    
+    blast.res$aro=sapply(strsplit(blast.res$query.id, split="\\|"), function(x) {x[5]})
+    
+    blast.tbl=tbl_df(blast.res)
 
-blast.res$aro=sapply(strsplit(blast.res$query.id, split="\\|"), function(x) {x[5]})
-
-blast.tbl=tbl_df(blast.res)
+}
 
 if (FALSE) {
 
@@ -83,36 +87,58 @@ if (TRUE) {
     
 }    
 
-
-gene.hits=unique(blast.tbl$query.id)
-gene.fa=card.fa[pmatch(gene.hits, names(card.fa))]
-
-#this.gene=filter(blast.tbl, query.id==gene.hits[i])
-
-setwd(workdir)
-
-i=1
-
-
-
-writeXStringSet(gene.fa[i], "temp.fa", append=FALSE, format="fasta")
-
-system(paste("blastn", "-db", "VRE7blast" , "-query", "temp.fa", "-gapopen 1 -gapextend 2 -word_size 9 -reward 1 -evalue .01 -outfmt '7 std qseq sseq stitle' -out", "temp.blast.tsv"))
-
-system(paste0("~/Code/mview/bin/mview -in blast ", "temp.blast.tsv", " -html head -coloring identity -moltype dna >",
-              file.path(plotdir, "temp.html")))
-#system(paste0("~/Code/mview/bin/mview -in blast ", temp.blast, " -out fasta >", temp.align.fasta))
-
-
-
-#y=pmatch(this.gene$subject.id, names(nano.reads), duplicates.ok=T)
-
-
-##Need a alignment of some kind of blast hits to look at and see if I believe them/they are significant.  Binned for the two peaks I see in bit score - try <500, <1000, >1000 as bins
+if (FALSE) {
+    gene.hits=unique(blast.tbl$query.id)
+    gene.fa=card.fa[pmatch(gene.hits, names(card.fa))]
+    gene.sym=sapply(strsplit(gene.hits, split="\\|"), function(x) {sym=x[6]})
     
     
-                                        #z=pmatch(x=blast.res$aro, table=card.tab$Accession, duplicates.ok=T)
+                                        #this.gene=filter(blast.tbl, query.id==gene.hits[i])
+    
+    setwd(workdir)
+    
+    ##Need a alignment of some kind of blast hits to look at and see if I believe them/they are significant.  Binned for the two peaks I see in bit score - try <500, <1000, >1000 as bins
+    
+    low.i=which(aro.stat$bit.max<500)
+    med.i=which(aro.stat$bit.max>500 & aro.stat$bit.max<1000)
+    high.i=which(aro.stat$bit.max>1000)
+    
+    setwd(file.path(workdir, "low"))
+    
+    for (i in low.i) {
+        
+        namebase=gene.sym[i]
+        ##Remove all symbols, messes up filenames
+        namebase=gsub('[[:punct:]]', '', namebase)
+        
+        faname=paste0(namebase, ".fa")
+        blastname=paste0(namebase, ".blast.tsv")
+        htmlname=paste0(namebase, ".html")
+        
+        writeXStringSet(gene.fa[i], faname, append=FALSE, format="fasta")
+        
+        paste("blastn", "-db", "../VRE7blast" , "-query", faname, "-gapopen 1 -gapextend 2 -word_size 9 -reward 1 -evalue .01 -outfmt '7 std qseq sseq stitle' -out", blastname)
+        
+        system(paste("blastn", "-db", "../VRE7blast" , "-query", faname, "-gapopen 1 -gapextend 2 -word_size 9 -reward 1 -evalue .01 -outfmt '7 std qseq sseq stitle' -out", blastname))
+        
+        system(paste0("~/Code/mview/bin/mview -in blast ", blastname, " -html head -coloring identity -moltype dna >",
+                      file.path(plotdir, "low", htmlname)))
+        
+    }
+}
+
+if (TRUE) {
+    ##Ok - trying bwa alignment of nanopore to CARD.  seems ok to me to do this.
+
+    ##Load in BAM.  Plot reads per gene aligned, mapq score distro
+
+     aligned=readGAlignments(bammy)
+    
+}
 
 
+    
+    
+ 
 
 
