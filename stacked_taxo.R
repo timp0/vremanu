@@ -74,13 +74,14 @@ plot.res %>%
     summarize(n=sum(per.reads))
 ##Pretty close - rounding errors only
 
+##fix x-axis order so VRE10 on the end
+plot.res$sample=factor(plot.res$sample, levels=samp.list)
 
 
-
-##Ok - need legend on bottom
-##need better(more different) color scheme
-##need smaples in order (VRE10)
-
+##Better color scheme still
+##Human reads
+##reorder so that blocks are all sorted in same order - some order we define, like unclass, other bac, archae, virus,
+##then our bac of interest
 pdf(file.path(plotdir, "stack.pdf"), width=11, height=8.5)
 
 ##ggplot(plot.res, aes(x=sample, y=num.reads.clade, fill=sci.name))+geom_bar(stat='identity')+theme_bw()
