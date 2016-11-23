@@ -24,7 +24,7 @@ krak.report$sci.name=trimws(krak.report$sci.name)
 ##Sort for top 3?
 krak.top=filter(krak.report, rank.code=="S") %>%
     group_by(sample) %>%
-    top_n(n=3, wt=num.reads.clade) %>%
+    top_n(n=2, wt=num.reads.clade) %>%
     ungroup %>%
     select(sci.name, ncbi.tax.id) %>%
     distinct
@@ -82,7 +82,8 @@ plot.res$sample=factor(plot.res$sample, levels=samp.list)
 ##Human reads
 ##reorder so that blocks are all sorted in same order - some order we define, like unclass, other bac, archae, virus,
 ##then our bac of interest
-pdf(file.path(plotdir, "stack.pdf"), width=11, height=8.5)
+##Italize bacteria
+pdf(file.path(plotdir, "stack2.pdf"), width=11, height=8.5)
 
 ##ggplot(plot.res, aes(x=sample, y=num.reads.clade, fill=sci.name))+geom_bar(stat='identity')+theme_bw()
 ggplot(plot.res, aes(x=sample, y=per.reads, fill=sci.name))+geom_bar(color="black", stat='identity')+
