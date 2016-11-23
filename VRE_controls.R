@@ -2,10 +2,10 @@ library(reshape)
 library(ggplot2)
 
 #read file into R here
-controlsgg = read.csv("C:/Users/Stephanie/OneDrive/Documents/TimpLab/VREpaper/Illumina_controls_gg.csv")
+controlsgg = read.csv("/atium/Data/NGS/Aligned/161110_VREkraken/Controls_kraken/Illumina_controls_gg.csv")
 controlsout <- split(controlsgg,controlsgg$Control)
 
-spikein = c("0","10^2","10^4","10^6")
+spikein = c(0,10e2,10e4,10e6)
 
 #reordered to match how we spiked into controls
 KPNcontrol = c(controlsout$KPN$Percent[4],controlsout$KPN$Percent[6],controlsout$KPN$Percent[7],controlsout$KPN$Percent[5])
