@@ -1,6 +1,5 @@
 library(Biostrings)
-library(ggplot2)
-library(dplyr)
+library(tidyverse)
 library(ggExtra)
 library(GenomicAlignments)
 
@@ -13,7 +12,7 @@ card.dir="/atium/Data/Nanopore/Analysis/161102_vrecontext/CARD"
 card.fa=readDNAStringSet(file.path(card.dir, "nucleotide_fasta_protein_homolog_model.fasta"))
 card.tab=read.csv(file.path(card.dir, "aro.csv"), stringsAsFactors=F)
 
-workdir="/atium/Data/Nanopore/Analysis/161102_vrecontext/VRE7db"
+workdir="/atium/Data/Nanopore/Analysis/161102_vrecontext/VRE7_try"
 
 if (FALSE) {
 
@@ -56,7 +55,7 @@ if (FALSE) {
     
     ##By inspection, lots of values about 1e-3 - asssume those are BS, throw them out
 
-if (TRUE) {
+if (FALSE) {
 
     blast.tbl=filter(blast.tbl, evalue<1e-3)
     blast.grp=group_by(blast.tbl, aro)
@@ -93,7 +92,7 @@ if (FALSE) {
     gene.sym=sapply(strsplit(gene.hits, split="\\|"), function(x) {sym=x[6]})
     
     
-                                        #this.gene=filter(blast.tbl, query.id==gene.hits[i])
+    ##this.gene=filter(blast.tbl, query.id==gene.hits[i])
     
     setwd(workdir)
     
@@ -127,18 +126,93 @@ if (FALSE) {
     }
 }
 
-if (TRUE) {
+if (FALSE) {
     ##Ok - trying bwa alignment of nanopore to CARD.  seems ok to me to do this.
 
     ##Load in BAM.  Plot reads per gene aligned, mapq score distro
 
-     aligned=readGAlignments(bammy)
+    ##aligned=readGAlignments(bammy)
     
 }
 
+if (TRUE) {
 
+    blast.cols=c("query.id", "subject.id", "per.identity", "align.len", "query.len", "subject.len", "evalue", "bit.score")
+    
+    blast.res=tbl_df(read.delim(file.path(workdir, "nanoblast2"), stringsAsFactors=F, header=F, col.names=blast.cols)) %>%
+        mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]})) %>%
+        mutate(per.sub=align.len/subject.len)
     
     
- 
+    nano.reads=readDNAStringSet(file.path(workdir, "160223_VRE7_recall_2dhq.fa"))
+    
+   
+
+}    
+    
+
+if (TRUE) {
+
+    ##Ok - let's plot e value and bit score for each aro
+    pdf(file.path(plotdir, "evalue2.pdf"))
+    
+    ggplot(blast.res, aes(x=aro, y=evalue))+geom_point(alpha=.1)+theme_bw()+scale_y_log10()
+    ggplot(blast.res, aes(x=aro, y=bit.score))+geom_point(alpha=.1)+theme_bw()
+    
+    dev.off()
+    
+    aro.stat=blast.res %>%
+        group_by(aro) %>%
+        summarize(eval.min=min(evalue), eval.max=max(evalue), eval.mean=mean(evalue),
+                       bit.min=min(bit.score), bit.max=max(bit.score), bit.mean=mean(bit.score))
+    
+    pdf(file.path(plotdir, "arostats2.pdf"))
+    
+    z=ggplot(aro.stat, aes(x=eval.min, y=bit.max))+geom_point(alpha=.3)+theme_bw()+scale_x_log10()
+    ggMarginal(z)
+    
+    z=ggplot(aro.stat, aes(x=eval.min, y=bit.max))+geom_point(alpha=.3)+theme_bw()+scale_x_log10(limits=c(1e-29, 1))
+    ggMarginal(z)
+    
+    dev.off()
+}
+
+if (TRUE) {
+
+    ##ok - filter
+
+    aro.hits=filter(blast.res, evalue==0) %>%
+        group_by(aro) %>%
+        summarize(n=n(), mean.id=mean(per.identity), min.id=min(per.identity), mean.al=mean(per.sub))
+
+    ##Still lots of false positives
+
+}
+    
+
+if (TRUE) {
+
+    blast.cols=c("query.id", "subject.id", "per.identity", "align.len", "mismatch", "gap.opens", "q.start", "q.end", "s.start", "s.end", "evalue", "bit.score")
+    
+    blast.res=tbl_df(read.delim(file.path(workdir, "lastblast.tsv"), stringsAsFactors=F, header=F, col.names=blast.cols)) %>%
+        mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]}))
+    
+    aro.stat=blast.res %>%
+        group_by(aro) %>%
+        summarize(eval.min=min(evalue), eval.max=max(evalue), eval.mean=mean(evalue),
+                       bit.min=min(bit.score), bit.max=max(bit.score), bit.mean=mean(bit.score))
+    
+
+    pdf(file.path(plotdir, "aro_laststats2.pdf"))
+    
+    z=ggplot(aro.stat, aes(x=eval.min, y=bit.max))+geom_point(alpha=.3)+theme_bw()+scale_x_log10()
+    ggMarginal(z)
+    
+    z=ggplot(aro.stat, aes(x=eval.min, y=bit.max))+geom_point(alpha=.3)+theme_bw()+scale_x_log10(limits=c(1e-29, 1))
+    ggMarginal(z)
+    
+    dev.off()
+    
+}
 
 
