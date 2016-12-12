@@ -3,7 +3,8 @@ library(tidyverse)
 
 ##ok - taking vcf output from gingr
 
-vcfs=read_tsv("~/Dropbox/Temp/parsnp.vcf", comment="##")
+vcfs=read_tsv("/atium/Data/NGS/Aligned/161027_SSSSS/SPAdes/P_2016_12_02_130357018963/out.vcf")
+##vcfs=read_tsv("/atium/Data/NGS/Aligned/161027_SSSSS/SPAdes/P_2016_12_05_231905287037/SNP_3ref.vcf", comment="##")
 
 ##ok - for each sample column, need to look at delta for all other sample columns, then sum to get that square on the table
 
@@ -14,7 +15,7 @@ comp=as_data_frame(t(combn(names(vcfs[10:22]),2))) %>%
 
 comp=rbind(comp, data_frame(V1=comp$V2, V2=comp$V1, val=comp$val))
 
-write_csv(spread(comp, V2, val), "~/Dropbox/Temp/outsnp.csv")
+write_csv(spread(comp, V2, val), "/atium/Data/NGS/Aligned/161027_SSSSS/SPAdes/P2016_12_05_231905287035/outsnp_3ref.csv")
 
 
 

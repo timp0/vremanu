@@ -1,17 +1,20 @@
 library(tidyverse)
 
 ##Illumina kraken files:
-ill.krak="/atium/Data/NGS/Aligned/161110_VREkraken/Illumina_kraken/report"
-plotdir="~/Dropbox/Data/Nanopore/161110_vrepaper"
+ill.krak="/atium/Data/NGS/Aligned/161110_VREkraken/VRE_Illumina_withhuman"
+plotdir="/atium/Data/NGS/Aligned/161110_VREkraken"
 
-
-samp.list=paste0("VRE", 1:10)
+nano.krak="/atium/Data/NGS/Aligned/161110_VREkraken/Nanopore_kraken/report"
+ref.krak = "/atium/Data/NGS/Aligned/161110_VREkraken/VRE_Illumina_withhuman"
+#samp.list=paste0("VRE", 1:10,"_withhuman") #for Illumina
+samp.list = c("NC_nanopore","VRE3_nanopore","VRE5_nanopore", "VRE6_nanopore", "VRE7nanopore","VRE10nanopore")
+#samp.list = c("ENFM_withhuman","ENFS_withhuman","KPN_withhuman","VRENC_withhuman","VREPC1_withhuman","VREPC2_withhuman","VREPC3_withhuman")
 
 krak.report=list()
 krak.report.cnames=c("per.reads", "num.reads.clade", "num.reads.taxon", "rank.code", "ncbi.tax.id", "sci.name")
 
 krak.report=bind_rows(lapply(samp.list, function(x) {tbl_df(data.frame(read.delim(
-                                                         file.path(ill.krak, paste0(x, ".kraken.output")),
+                                                         file.path(nano.krak, paste0(x, ".kraken.output")),
                                                          header=F, col.names=krak.report.cnames), sample=x))}))
 
 ##Trim left side white space in sci.name
