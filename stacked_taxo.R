@@ -45,8 +45,9 @@ plot_stacked <- function(samp.list, plotdir, namey) {
     
     
     ##per group non bac/non human hits
+    ##Note - we assume no eukaryotes (2759) in kraken report but human, because that's what kraken database was
     plot.res=bind_rows(plot.res,
-                       filter(krak.report, rank.code=="D"& ncbi.tax.id!=2) %>%
+                       filter(krak.report, rank.code=="D", ncbi.tax.id!=2, ncbi.tax.id!=2759) %>%
                        select(sample, sci.name, num.reads.clade))
     
     ##per group unclass hits
@@ -67,6 +68,7 @@ plot_stacked <- function(samp.list, plotdir, namey) {
         arrange(sample, desc(num.reads.clade)) %>%
         mutate(per.reads=round(100*num.reads.clade/sum(num.reads.clade), 2))
     
+   
     ##Double check per.reads adds up to 100
     plot.res %>%
         group_by(sample) %>%
@@ -76,18 +78,28 @@ plot_stacked <- function(samp.list, plotdir, namey) {
     ##fix x-axis order so VRE10 on the end
     plot.res$sample=factor(plot.res$sample, levels=samp.list$label)
     
+    ##Fix y-axis order
+    yorder=c("unclassified", "Other bacteria", "Homo sapiens", "Archaea", "Viruses", krak.top$sci.name)
+    plot.res$sci.name=factor(plot.res$sci.name, levels=yorder)
+
+    plot.res=plot.res %>%
+        arrange(sample, sci.name)
+
     
     ##Better color scheme still
     ##Human reads
     ##reorder so that blocks are all sorted in same order - some order we define, like unclass, other bac, archae, virus,
     ##then our bac of interest
+
     ##Italize bacteria
-    pdf(file.path(plotdir, namey), width=11, height=8.5)
+    pdf(file.path(plotdir, paste0(namey, '.pdf')), width=11, height=8.5)
     
     print(ggplot(plot.res, aes(x=sample, y=per.reads, fill=sci.name))+geom_bar(color="black", stat='identity')+
         scale_fill_hue()+theme_bw()+theme(legend.position="bottom"))
     
     dev.off()
+
+    write_csv(plot.res, file.path(plotdir, paste0(namey, '.csv')))
     
     
 }
@@ -101,7 +113,7 @@ plotdir="~/Dropbox/Data/Nanopore/161110_vrepaper"
 samp.list=tibble(filey=file.path(ill.krak, paste0("VRE", 1:10, "_withhuman.kraken.output")),
                  label=paste0("VRE", 1:10, "Illumina"))
 
-plot_stacked(samp.list, plotdir, 'stack_ill1.pdf')
+plot_stacked(samp.list, plotdir, 'stack_ill1')
 
 
 nano.krak="/atium/Data/NGS/Aligned/161110_VREkraken/Nanopore_kraken/report"
@@ -109,5 +121,5 @@ nano.krak="/atium/Data/NGS/Aligned/161110_VREkraken/Nanopore_kraken/report"
 samp.list=tibble(filey=file.path(nano.krak, paste0("VRE", c("NC", 3, 5, 6, 7, 10), "_nanopore.kraken.output")),
                  label=paste0("VRE", c("NC", 3, 5, 6, 7, 10), "Nanopore"))
 
-plot_stacked(samp.list, plotdir, 'stack_nano1.pdf')
+plot_stacked(samp.list, plotdir, 'stack_nano1')
 
