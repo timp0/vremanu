@@ -1,75 +1,46 @@
 library(Biostrings)
-library(ggplot2)
-library(dplyr)
+library(tidyverse)
 library(ggExtra)
-
+library(GenomicAlignments)
 
 plotdir="~/Dropbox/Data/Nanopore/161110_vrepaper"
-
-blast.cols=c("query.id", "subject.id", "per.identity", "align.len", "mismatch", "gap.opens", "q.start", "q.end", "s.start", "s.end", "evalue", "bit.score")
 
 card.dir="/atium/Data/Nanopore/Analysis/161102_vrecontext/CARD"
 
 card.fa=readDNAStringSet(file.path(card.dir, "nucleotide_fasta_protein_homolog_model.fasta"))
-card.tab=read.csv(file.path(card.dir, "aro.csv"), stringsAsFactors=F)
-
-workdir="/atium/Data/Nanopore/Analysis/161102_vrecontext/VRE7db"
-
-blast.res=read.delim(file.path(workdir, "blastry2"), stringsAsFactors=F, header=F, col.names=blast.cols)
+card.tab=read_csv(file.path(card.dir, "aro.csv"))
 
 nano.reads=readDNAStringSet(file.path(workdir, "160223_VRE7_recall_2dhq.fa"))
 
-blast.res$aro=sapply(strsplit(blast.res$query.id, split="\\|"), function(x) {x[5]})
+workdir="/atium/Data/Nanopore/Analysis/161102_vrecontext/VRE7_try"
 
-blast.tbl=tbl_df(blast.res)
-
-if (FALSE) {
-
-    ##Ok - let's plot e value and bit score for each aro
-    pdf(file.path(plotdir, "evalue.pdf"))
-    
-    ggplot(blast.tbl, aes(x=aro, y=evalue))+geom_point(alpha=.1)+theme_bw()+scale_y_log10()
-    ggplot(blast.tbl, aes(x=aro, y=bit.score))+geom_point(alpha=.1)+theme_bw()
-    
-    dev.off()
-    
-    blast.grp=group_by(blast.tbl, aro)
-    
-    aro.stat=summarize(blast.grp, eval.min=min(evalue), eval.max=max(evalue), eval.mean=mean(evalue),
-                       bit.min=min(bit.score), bit.max=max(bit.score), bit.mean=mean(bit.score))
-    
-    pdf(file.path(plotdir, "arostats.pdf"))
-    
-    z=ggplot(aro.stat, aes(x=eval.min, y=bit.max))+geom_point(alpha=.3)+theme_bw()+scale_x_log10()
-    ggMarginal(z)
-    
-    z=ggplot(aro.stat, aes(x=eval.min, y=bit.max))+geom_point(alpha=.3)+theme_bw()+scale_x_log10(limits=c(1e-29, 1))
-    ggMarginal(z)
-    
-    dev.off()
-
-}
-    
-    ##By inspection, lots of values about 1e-3 - asssume those are BS, throw them out
 
 if (TRUE) {
 
-    blast.tbl=filter(blast.tbl, evalue<1e-3)
-    blast.grp=group_by(blast.tbl, aro)
-    
-    ##ok - from 2102 possible, now only have 659 hits, replot
+    ##BLAST reads against CARD
 
-    pdf(file.path(plotdir, "evalue_filt.pdf"))
+    #blast.cols=c("query.id", "subject.id", "per.identity", "align.len", "mismatch", "gap.opens", "q.start", "q.end", "s.start", "s.end", "evalue", "bit.score")
     
-    ggplot(blast.tbl, aes(x=aro, y=evalue))+geom_point(alpha=.1)+theme_bw()+scale_y_log10()
-    ggplot(blast.tbl, aes(x=aro, y=bit.score))+geom_point(alpha=.1)+theme_bw()
+    blast.cols=c("query.id", "subject.id", "per.identity", "align.len", "query.len", "subject.len", "evalue", "bit.score")
+    
+    blast.res=tbl_df(read.delim(file.path(workdir, "nanoblast2"), stringsAsFactors=F, header=F, col.names=blast.cols)) %>%
+        mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]})) %>%
+        mutate(per.sub=align.len/subject.len)
+    
+    ##Ok - let's plot e value and bit score for each aro
+    pdf(file.path(plotdir, "evalue2.pdf"))
+    
+    ggplot(blast.res, aes(x=aro, y=evalue))+geom_point(alpha=.1)+theme_bw()+scale_y_log10()
+    ggplot(blast.res, aes(x=aro, y=bit.score))+geom_point(alpha=.1)+theme_bw()
     
     dev.off()
     
-    aro.stat=summarize(blast.grp, eval.min=min(evalue), eval.max=max(evalue), eval.mean=mean(evalue),
+    aro.stat=blast.res %>%
+        group_by(aro) %>%
+        summarize(eval.min=min(evalue), eval.max=max(evalue), eval.mean=mean(evalue),
                        bit.min=min(bit.score), bit.max=max(bit.score), bit.mean=mean(bit.score))
     
-    pdf(file.path(plotdir, "arostats_filt.pdf"))
+    pdf(file.path(plotdir, "arostats2.pdf"))
     
     z=ggplot(aro.stat, aes(x=eval.min, y=bit.max))+geom_point(alpha=.3)+theme_bw()+scale_x_log10()
     ggMarginal(z)
@@ -79,40 +50,162 @@ if (TRUE) {
     
     dev.off()
 
-    ##Still a lot of hits that may or may not be real
+    ##ok - filter
+
+    aro.hits=filter(blast.res, evalue==0) %>%
+        group_by(aro) %>%
+        summarize(n=n(), mean.id=mean(per.identity), min.id=min(per.identity), mean.al=mean(per.sub), bit.mean=mean(bit.score))
     
+    pdf(file.path(plotdir, "blast_aro_hits.pdf"))
+    
+    z=ggplot(aro.hits, aes(x=mean.id, y=mean.al))+geom_point(alpha=.3)+theme_bw()
+    ggMarginal(z)
+
+    dev.off()
+    
+    pdf(file.path(plotdir, "blast_aro_hits_id.pdf"))
+    
+    ggplot(blast.res, aes(x=as.numeric(factor(aro)), y=per.identity))+geom_density_2d()+theme_bw()
+    ggplot(blast.res, aes(x=as.numeric(factor(aro)), y=per.sub))+geom_density_2d()+theme_bw()
+    ggplot(blast.res, aes(x=as.numeric(factor(aro)), y=bit.score))+geom_density_2d()+theme_bw()
+    
+    dev.off()
+    
+    ##Still lots of false positives?
+
+}
+    
+
+if (FALSE) {
+
+    ##LAST load
+    
+    last.tsv=c("score", "subject.id", "s.start", "align.len", "s.strand", "s.length", "query.id", "q.start", "align.len_2", "q.strand", "q.len", "aln", "mismap")
+    
+    last.res=read_tsv(file.path(workdir, "lastcard.tsv"), comment="#", col_names=last.tsv) %>%
+        mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]})) %>%
+        mutate(per.sub=align.len/s.length)
+    
+    last.blast=c("query.id", "subject.id", "per.identity", "align.len", "mismatch", "gap.opens", "q.start", "q.end", "s.start", "s.end")
+    
+    last.blast.res=read_tsv(file.path(workdir, "lastblast.tsv"), col_names=last.blast) %>%
+        mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]})) 
+        
+    
+    last.hits=last.res %>%
+        group_by(aro) %>%
+        summarize(n=n(), score=mean(score), per.sub=mean(per.sub)) %>%
+        mutate(blast.match=(aro %in% aro.hits$aro))
+    
+    
+    pdf(file.path(plotdir, "last_aro_hits.pdf"))
+        
+    ggplot(last.hits, aes(x=score, y=per.sub, color=blast.match, size=n))+geom_point(alpha=.3)+theme_bw()    
+    
+    dev.off()
+
+    last.blast.hits=last.blast.res %>%
+        group_by(aro) %>%
+        summarize(n=n(), per.id=mean(per.identity), align.len=mean(align.len)) %>%
+        mutate(blast.match=(aro %in% aro.hits$aro))
+
+    pdf(file.path(plotdir, "last_blast_aro_hits.pdf"))
+
+    ggplot(last.blast.hits, aes(x=per.id, y=align.len, color=blast.match, size=n))+geom_point(alpha=.3)+theme_bw()
+   
+
+    dev.off()
+
+    
+}
+
+
+if (TRUE) {
+    ##Ok - trying bwa alignment of nanopore to CARD.  seems ok to me to do this.
+
+    ##Load in BAM.  Plot reads per gene aligned, mapq score distro
+
+    tags=ScanBamParam(tag="NM", what=c("flag", "qname"))
+    
+    bwa.card=tbl_df(readGAlignments(file.path(workdir, "vre7_card.sorted.bam"), param=tags)) %>%
+        mutate(subject.id=as.character(seqnames)) %>%
+        select(subject.id, qwidth, width, qname, NM) %>%
+        mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]})) %>%
+        mutate(s.length=width(card.fa[pmatch(subject.id, names(card.fa), duplicates.ok=T)])) %>%
+        mutate(per.sub=width/s.length, per.identity=1-(NM/width))
+
+    bwa.hits=bwa.card %>%
+        group_by(aro) %>%
+        summarize(n=n(), per.id=mean(per.identity), per.sub=mean(per.sub)) %>%
+        mutate(blast.match=factor((aro %in% aro.hits$aro)+(aro %in% last.hits$aro)))
+    
+    
+    pdf(file.path(plotdir, "bwa_aro_hits.pdf"))
+        
+    ggplot(bwa.hits, aes(x=per.id, y=per.sub, color=blast.match, size=n))+geom_point(alpha=.3)+theme_bw()    
+    
+    dev.off()    
+    
+}
+
+##Try last bam file
+
+if (TRUE) {
+
+    tags=ScanBamParam(tag="NM", what=c("flag", "qname"))
+    
+    last.card=tbl_df(readGAlignments(file.path(workdir, "last.sorted.bam"), param=tags))%>%
+        mutate(subject.id=as.character(seqnames)) %>%
+        select(subject.id, qwidth, width, qname, NM) %>%
+        mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]})) %>%
+        mutate(s.length=width(card.fa[pmatch(subject.id, names(card.fa), duplicates.ok=T)])) %>%
+        mutate(per.sub=width/s.length, per.identity=1-(NM/width))
+
+    last.bam.hits=last.card %>%
+        group_by(aro) %>%
+        summarize(n=n(), per.id=mean(per.identity), per.sub=mean(per.sub)) %>%
+        mutate(blast.match=factor((aro %in% aro.hits$aro)+(aro %in% bwa.hits$aro)))
+    
+    
+    pdf(file.path(plotdir, "last_bam_aro_hits.pdf"))
+        
+    ggplot(last.bam.hits, aes(x=per.id, y=per.sub, color=blast.match, size=n))+geom_point(alpha=.3)+theme_bw()    
+    
+    dev.off()    
+ 
+}
+
+##Output tables 
+if (TRUE) {
+
+    ##Table document
+    aro.hits=aro.hits %>%
+        mutate(last.match=aro %in% last.bam.hits$aro) %>%
+        mutate(bwa.match=aro %in% bwa.hits$aro) %>%
+        mutate(aro.idx=pmatch(aro, card.tab$Accession)) %>%
+        mutate(aro.name=card.tab$Name[aro.idx]) %>%
+        mutate(aro.desc=card.tab$Description[aro.idx])
+
+    write_csv(aro.hits, path=file.path(plotdir, "blastres.csv"))
+
+    ##Table document
+    last.bam.hits=last.bam.hits %>%
+        mutate(blast.match=aro %in% aro.hits$aro) %>%
+        mutate(bwa.match=aro %in% bwa.hits$aro) %>%
+        mutate(aro.idx=pmatch(aro, card.tab$Accession)) %>%
+        mutate(aro.name=card.tab$Name[aro.idx]) %>%
+        mutate(aro.desc=card.tab$Description[aro.idx])
+
+    write_csv(last.bam.hits, path=file.path(plotdir, "lastres.csv"))
+
+    ##Table document
+    bwa.hits=bwa.hits %>%
+        mutate(blast.match=aro %in% bwa.hits$aro) %>%
+        mutate(last.match=aro %in% last.bam.hits$aro) %>%
+        mutate(aro.idx=pmatch(aro, card.tab$Accession)) %>%
+        mutate(aro.name=card.tab$Name[aro.idx]) %>%
+        mutate(aro.desc=card.tab$Description[aro.idx])
+
+    write_csv(bwa.hits, path=file.path(plotdir, "bwares.csv"))
+
 }    
-
-
-gene.hits=unique(blast.tbl$query.id)
-gene.fa=card.fa[pmatch(gene.hits, names(card.fa))]
-
-#this.gene=filter(blast.tbl, query.id==gene.hits[i])
-
-setwd(workdir)
-
-i=1
-
-
-
-writeXStringSet(gene.fa[i], "temp.fa", append=FALSE, format="fasta")
-
-system(paste("blastn", "-db", "VRE7blast" , "-query", "temp.fa", "-gapopen 1 -gapextend 2 -word_size 9 -reward 1 -evalue .01 -outfmt '7 std qseq sseq stitle' -out", "temp.blast.tsv"))
-
-system(paste0("~/Code/mview/bin/mview -in blast ", "temp.blast.tsv", " -html head -coloring identity -moltype dna >",
-              file.path(plotdir, "temp.html")))
-#system(paste0("~/Code/mview/bin/mview -in blast ", temp.blast, " -out fasta >", temp.align.fasta))
-
-
-
-#y=pmatch(this.gene$subject.id, names(nano.reads), duplicates.ok=T)
-
-
-##Need a alignment of some kind of blast hits to look at and see if I believe them/they are significant.  Binned for the two peaks I see in bit score - try <500, <1000, >1000 as bins
-    
-    
-                                        #z=pmatch(x=blast.res$aro, table=card.tab$Accession, duplicates.ok=T)
-
-
-
-
