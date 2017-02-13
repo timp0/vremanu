@@ -52,9 +52,9 @@ plot_stacked <- function(samp.list, plotdir, namey) {
     
     ##per group unclass hits
     ##Unclass just means save U
-    plot.res=bind_rows(plot.res,
-                       filter(krak.report, rank.code=="U") %>%
-                       select(sample, sci.name, num.reads.clade))
+    #plot.res=bind_rows(plot.res,
+    #                   filter(krak.report, rank.code=="U") %>%
+    #                   select(sample, sci.name, num.reads.clade))
     
     
     ##Finally our actual hits of interest

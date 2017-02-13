@@ -36,3 +36,12 @@ bwa mem -t 8 -x ont2d ../CARD/nucleotide_fasta_protein_homolog_model.fasta ../15
 
 ##CARD BLAST (RGI)
 python ~/Code/rgi_card/rgi.py -t read -i 151004_VRE10_recall_called_2dhq.fastq.gz -o try -e 0
+
+
+##Kraken CARD (Florian)
+
+#/usr/local/kraken/kraken --db ~/Code/card-krakendb/ ~/Code/card-krakendb/library/* > test.kraken
+#/usr/local/kraken/kraken-report --db ~/Code/card-krakendb/ test.kraken > test.report
+
+/usr/local/kraken/kraken --db ~/Code/card-krakendb/ 160223_VRE7_recall_2dhq.fa >VRE7.card.kraken
+/usr/local/kraken/kraken-report --db ~/Code/card-krakendb/ VRE7.card.kraken >VRE7.card.kraken.report
