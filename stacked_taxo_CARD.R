@@ -5,19 +5,19 @@ ill.krak="/atium/Data/NGS/Aligned/170112_VRE/Illumina_CARD"
 plotdir="/atium/Data/NGS/Aligned/170112_VRE/compare_CARD"
 
 nano.krak="/atium/Data/NGS/Aligned/170112_VRE/Nanopore_CARD"
-ref.krak = "/atium/Data/NGS/Aligned/161110_VREkraken/VRE_Illumina_withhuman"
+ref.krak = "/atium/Data/NGS/Aligned/170112_VRE/ref_CARD"
 
 comp.krak="/atium/Data/NGS/Aligned/170112_VRE/compare_CARD"
 #samp.list=c("VRENC_CARD","VRENC_nanopore_CARD", "VRE7_CARD", "VRE7_nanopore_CARD","VRE10_CARD","VRE10_nanopore_CARD")
-samp.list=paste0("VRE", 1:10,"_CARD") #for Illumina
+#samp.list=paste0("VRE", 1:10,"_CARD") #for Illumina
 #samp.list = c("VRENC_nanopore_CARD","VRE3_nanopore_CARD","VRE5_nanopore_CARD", "VRE6_nanopore_CARD", "VRE7_nanopore_CARD","VRE10_nanopore_CARD")
-#samp.list = c("ENFM_withhuman","ENFS_withhuman","KPN_withhuman","VRENC_withhuman","VREPC1_withhuman","VREPC2_withhuman","VREPC3_withhuman")
+samp.list = c("ENFM_CARD","ENFS_CARD","KPN_CARD","NC_CARD","PC1_CARD","PC2_CARD","PC3_CARD")
 
 krak.report=list()
 krak.report.cnames=c("per.reads", "num.reads.clade", "num.reads.taxon", "rank.code", "ncbi.tax.id", "sci.name")
 
 krak.report=bind_rows(lapply(samp.list, function(x) {tbl_df(data.frame(read.delim(
-                                                         file.path(ill.krak, paste0(x, ".kraken.output")),
+                                                         file.path(ref.krak, paste0(x, ".kraken.output")),
                                                          header=F, col.names=krak.report.cnames), sample=x))}))
 
 ##Trim left side white space in sci.name
@@ -170,7 +170,7 @@ plot.res$sample=factor(plot.res$sample,levels=samp.list)
 ##reorder so that blocks are all sorted in same order - some order we define, like unclass, other bac, archae, virus,
 ##then our bac of interest
 ##Italize bacteria
-pdf(file.path(plotdir, "heat_ill_CARD_grouped_new.pdf"), width=15, height=8.5)
+pdf(file.path(plotdir, "heat_ref_CARD_grouped_new.pdf"), width=15, height=8.5)
 
 ggplot(plot.res, aes(sample, sci.name)) + geom_tile(aes(fill=per.reads)) +
     scale_fill_gradient(low="blue", high="red") + ylab("AMR genes") + xlab("Samples") #+ theme(panel.background = element_rect(fill='lightgoldenrod'))
