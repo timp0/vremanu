@@ -64,9 +64,28 @@ plot.dat=vre6.krak.filt %>%
 plotdir="~/Dropbox/Data/Nanopore/161110_vrepaper"
 
 pdf(file.path(plotdir, "tax_time.pdf"))
-print(ggplot(plot.dat, aes(x=minute, y=cumread, color=tax.name))+geom_step()+scale_x_continuous()+theme_bw())
+print(ggplot(plot.dat, aes(x=minute, y=cumread, color=tax.name))+geom_step()+scale_x_continuous()+theme_bw()+xlim(0,1000))
 dev.off()
 
 
+pdf(file.path(plotdir, "tax_pie.pdf"))
+print(ggplot(plot.dat, aes(x=factor(1), fill=tax.name))+geom_bar(color="black")+coord_polar(theta="y"))
+dev.off()
+
 ##ok - let's get dangerous and try to animate
+
+library(animation)
+theme_set(theme_bw())
+
+tstep=100
+#tmax=max(plot.dat$minute)
+tmax=1000
+
+saveVideo({
+    for (i in tstep:tstep:tmax) {
+        temp.dat=plot.dat %>%
+            filter(minute<i)
+        print(ggplot(temp.dat, aes(x=factor(1), fill=tax.name))+geom_bar(color="black")+coord_polar(theta="y"))        
+    }}, movie.name = "/home/timp/Dropbox/Temp/pietry.mp4")
+   
 

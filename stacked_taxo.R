@@ -90,7 +90,6 @@ plot_stacked <- function(samp.list, plotdir, namey) {
     ##Human reads
     ##reorder so that blocks are all sorted in same order - some order we define, like unclass, other bac, archae, virus,
     ##then our bac of interest
-
     ##Italize bacteria
     pdf(file.path(plotdir, paste0(namey, '.pdf')), width=11, height=8.5)
     
