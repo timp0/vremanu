@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##using an ubuntu 16.04 lts r4.4xlarge instance, with full upgrade as of 090517
-##also emacs, htop, build-essential
+##also emacs, htop, build-essential, ess
 
 if [ "$1" == "kraken.make" ]; then
 
@@ -46,17 +46,24 @@ if [ "$1" == "kraken.db" ]; then
     mkdir -p /home/ubuntu/krakendb
     ~/kraken/kraken-build --download-taxonomy --db krakendb
     ~/kraken/kraken-build --download-library bacteria --db krakendb
-    ~/kraken/kraken-build --download-library plasmids --db krakendb
+    ~/kraken/kraken-build --download-library plasmid --db krakendb
     ~/kraken/kraken-build --download-library viral --db krakendb
     ~/kraken/kraken-build --download-library archaea --db krakendb
     ~/kraken/kraken-build --download-library human --db krakendb
-    ~/kraken/kraken-build --threads 14 --build --jellyfish-hash-size 12800M --db krakendb 
+    ~/kraken/kraken-build --threads 14 --build --jellyfish-hash-size 12800M --db krakendb
+    ##~/kraken/kraken-build --threads 14 --build --db krakendb 
     
 fi
 
+if [ "$1" == "clean.db" ]; then
+
+    cd /home/ubuntu
+    rm -Rf kraken.db
+
+fi
 
 
-if [ "$1" == "clean" ]; then
+if [ "$1" == "clean.all" ]; then
 
     cd /home/ubuntu
     rm -Rf kraken
