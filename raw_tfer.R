@@ -13,17 +13,18 @@ dataloc=gs_read(fullsheet, ws="VRE_0905")
 
 if (TRUE) {
 
-    dir.create(file.path(workdir))
+    dir.create(file.path(workdir), recursive=TRUE)
     
     
     for (i in 1:dim(dataloc)[1]) {
+        
+        ##ill data			       			
+        system(paste0("scp timp@duchess.timplab.com:", dataloc$illumina.r1[i], " ", file.path(workdir, basename(dataloc$illumina.r1[i]))))
+        system(paste0("scp timp@duchess.timplab.com:", dataloc$illumina.r2[i], " ", file.path(workdir, basename(dataloc$illumina.r2[i]))))
+        ##Nano data
         if(!is.na(dataloc$nanopore.raw[i])) {	
-            ##ill data			       			
-            system(paste0("scp duchess:", dataloc$illumina.r1[i], " ", file.path(workdir, basename(dataloc$illumina.r1[i]))))
-            system(paste0("scp duchess:", dataloc$illumina.r2[i], " ", file.path(workdir, basename(dataloc$illumina.r2[i]))))
-            system(paste0("scp duchess:", dataloc$nanopore.fasta[i], " ", file.path(workdir, basename(dataloc$nanopore.fasta[i]))))            
-            
+            system(paste0("scp timp@duchess.timplab.com:", dataloc$nanopore.fasta[i], " ", file.path(workdir, basename(dataloc$nanopore.fasta[i]))))
         }
+        
     }
-
 }

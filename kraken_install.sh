@@ -3,6 +3,7 @@
 ##using an ubuntu 16.04 lts r4.4xlarge instance, with full upgrade as of 090517
 ##also emacs, htop, build-essential, ess
 
+
 if [ "$1" == "centrifuge.make" ]; then
     cd /home/ubuntu
     git clone https://github.com/infphilo/centrifuge
@@ -54,6 +55,13 @@ if [ "$1" == "conda" ]; then
     conda install -y r-essentials 
     
 fi
+
+if [ "$1" == "r.pkgs" ]; then
+
+    Rscript ~/vremanu/r_install.R
+    
+fi
+
 
 
 if [ "$1" == "kraken.db.prep" ]; then
