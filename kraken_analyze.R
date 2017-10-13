@@ -121,40 +121,63 @@ plot_stacked <- function(samp.list, plotdir, namey) {
     
 }
 
-##Ill first
 
-samp.list=dataloc %>%
-    select(sample, k31.ill.aws) %>%
-    rename(krak.file=k31.ill.aws) %>%
-    mutate(filey=paste0(krak.file, ".report.gz"))
+if (TRUE) {
+    ##Ill first
+    
+    samp.list=dataloc %>%
+        select(sample, k31.ill.aws) %>%
+        rename(krak.file=k31.ill.aws) %>%
+        mutate(filey=paste0(krak.file, ".report.gz"))
+    
+    
+    plot_stacked(samp.list, plotdir, 'stack_k31_ill1')
+    
+    samp.list=dataloc %>%
+        select(sample, k24.ill.aws) %>%
+        rename(krak.file=k24.ill.aws) %>%
+        mutate(filey=paste0(krak.file, ".report.gz"))
+    
+    plot_stacked(samp.list, plotdir, 'stack_k24_ill1')
+    
+    samp.list=dataloc %>%
+        filter(!is.na(k31.nano.aws)) %>%
+        select(sample, k31.nano.aws) %>%
+        rename(krak.file=k31.nano.aws) %>%
+        mutate(filey=paste0(krak.file, ".report.gz"))
+    
+    plot_stacked(samp.list, plotdir, 'stack_k31_nano1')
+    
+    samp.list=dataloc %>%
+        filter(!is.na(k24.nano.aws)) %>%
+        select(sample, k24.nano.aws) %>%
+        rename(krak.file=k24.nano.aws) %>%
+        mutate(filey=paste0(krak.file, ".report.gz"))
+    
+    plot_stacked(samp.list, plotdir, 'stack_k24_nano1')
+    
+}
+
+if (TRUE) {
+
+    ##system(paste0("gunzip ~/Data/kraken/*report.gz"))
+
+    ##take first 10 for now
+    
+    kraken.report.list=paste(paste0(dataloc$k31.ill.aws[1:10], ".report"), collapse=" ")
+
+    system(paste0("/bin/bash -c ", shQuote(paste0("source activate qiime2-2017.9; ",
+                                                  "kraken-biom ", kraken.report.list, " -o ~/Data/kraken/try.biom ",
+                                                  "--otu_fp ~/Data/kraken/try.outfp"))))
+
+    system(paste0("/bin/bash -c ", shQuote(paste0("source activate qiime2-2017.9; ",
+                                                  "qiime tools import --input-path ~/Data/kraken/try.biom ",
+                                                  "--type 'FeatureTable[Frequency]' ",
+                                                  "--source-format BIOMV210Format ",
+                                                  "--output-path try.qza"))))
+
     
 
-plot_stacked(samp.list, plotdir, 'stack_k31_ill1')
+    z=import_biom("~/Data/kraken/try.biom")
 
-samp.list=dataloc %>%
-    select(sample, k24.ill.aws) %>%
-    rename(krak.file=k24.ill.aws) %>%
-    mutate(filey=paste0(krak.file, ".report.gz"))
-
-plot_stacked(samp.list, plotdir, 'stack_k24_ill1')
-
-samp.list=dataloc %>%
-    filter(!is.na(k31.nano.aws)) %>%
-    select(sample, k31.nano.aws) %>%
-    rename(krak.file=k31.nano.aws) %>%
-    mutate(filey=paste0(krak.file, ".report.gz"))
-
-plot_stacked(samp.list, plotdir, 'stack_k31_nano1')
-
-samp.list=dataloc %>%
-    filter(!is.na(k24.nano.aws)) %>%
-    select(sample, k24.nano.aws) %>%
-    rename(krak.file=k24.nano.aws) %>%
-    mutate(filey=paste0(krak.file, ".report.gz"))
-
-plot_stacked(samp.list, plotdir, 'stack_k24_nano1')
-
-
-
-
-
+}
