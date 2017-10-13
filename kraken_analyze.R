@@ -1,5 +1,6 @@
 library(tidyverse)
 library(googlesheets)
+library(phyloseq)
 
 workdir="~/Data/kraken"
 plotdir="~/Data/plots"
@@ -121,6 +122,7 @@ plot_stacked <- function(samp.list, plotdir, namey) {
     
 }
 
+##system(paste0("gunzip ~/Data/kraken/*report.gz"))
 
 if (TRUE) {
     ##Ill first
@@ -128,7 +130,7 @@ if (TRUE) {
     samp.list=dataloc %>%
         select(sample, k31.ill.aws) %>%
         rename(krak.file=k31.ill.aws) %>%
-        mutate(filey=paste0(krak.file, ".report.gz"))
+        mutate(filey=paste0(krak.file, ".report"))
     
     
     plot_stacked(samp.list, plotdir, 'stack_k31_ill1')
@@ -136,7 +138,7 @@ if (TRUE) {
     samp.list=dataloc %>%
         select(sample, k24.ill.aws) %>%
         rename(krak.file=k24.ill.aws) %>%
-        mutate(filey=paste0(krak.file, ".report.gz"))
+        mutate(filey=paste0(krak.file, ".report"))
     
     plot_stacked(samp.list, plotdir, 'stack_k24_ill1')
     
@@ -144,7 +146,7 @@ if (TRUE) {
         filter(!is.na(k31.nano.aws)) %>%
         select(sample, k31.nano.aws) %>%
         rename(krak.file=k31.nano.aws) %>%
-        mutate(filey=paste0(krak.file, ".report.gz"))
+        mutate(filey=paste0(krak.file, ".report"))
     
     plot_stacked(samp.list, plotdir, 'stack_k31_nano1')
     
@@ -152,7 +154,7 @@ if (TRUE) {
         filter(!is.na(k24.nano.aws)) %>%
         select(sample, k24.nano.aws) %>%
         rename(krak.file=k24.nano.aws) %>%
-        mutate(filey=paste0(krak.file, ".report.gz"))
+        mutate(filey=paste0(krak.file, ".report"))
     
     plot_stacked(samp.list, plotdir, 'stack_k24_nano1')
     
@@ -160,7 +162,7 @@ if (TRUE) {
 
 if (TRUE) {
 
-    ##system(paste0("gunzip ~/Data/kraken/*report.gz"))
+
 
     ##take first 10 for now
     

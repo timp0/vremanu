@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ##using an ubuntu 16.04 lts r4.4xlarge instance, with full upgrade as of 090517
 ##also emacs, htop, build-essential, ess
 
@@ -110,6 +109,19 @@ fi
 
 if [ "$1" == "kraken.db.tx24" ]; then
     aws s3 sync s3://timpawsanalysis/170913_krakendb.masked.fullk24/ krakendb/
+
+fi
+
+
+if [ "$1" == "phylo" ]; then
+
+    conda create -n phylo r python=3.6
+    source activate phylo
+    conda install r-essentials
+    #Rscript ~/vremanu/r_install.R
+    #conda install -c bioconda kraken-biom 
+    
+    source deactivate  
 
 fi
 
