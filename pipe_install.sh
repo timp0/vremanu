@@ -113,6 +113,7 @@ if [ "$1" == "kraken.db.tx24" ]; then
 fi
 
 
+
 if [ "$1" == "phylo" ]; then
 
     conda create -n phylo r python=3.6

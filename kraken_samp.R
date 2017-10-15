@@ -41,7 +41,7 @@ if (TRUE) {
             system(paste0("~/kraken/kraken --threads 30 --db krakendb/ ", dataloc$nanopore.fa.aws[i], " >", dataloc$k31.nano.aws[i]))
             system(paste0("~/kraken/kraken-translate --db krakendb/ ", dataloc$k31.nano.aws[i], " >",
                           dataloc$k31.nano.aws[i], ".labels"))
-            system(paste0("~/kraken/kraken-report --db krakendb/ ", dataloc$k31.ill.aws[i], " >",
+            system(paste0("~/kraken/kraken-report --db krakendb/ ", dataloc$k31.nano.aws[i], " >",
                           dataloc$k31.nano.aws[i], ".report"))
 
         }       
