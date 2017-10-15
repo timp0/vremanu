@@ -118,8 +118,8 @@ if [ "$1" == "phylo" ]; then
     conda create -n phylo r python=3.6
     source activate phylo
     conda install r-essentials
-    #Rscript ~/vremanu/r_install.R
-    #conda install -c bioconda kraken-biom 
+    Rscript ~/vremanu/r_install.R
+    conda install kraken-biom bioconductor-phyloseq
     
     source deactivate  
 
