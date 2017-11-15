@@ -36,6 +36,13 @@ if (TRUE) {
                       dataloc$k31.ill.aws[i], ".labels"))
         system(paste0("~/kraken/kraken-report --db krakendb/ ", dataloc$k31.ill.aws[i], " >",
                       dataloc$k31.ill.aws[i], ".report"))
+        
+        system(paste0("python ~/Bracken/est_abundance.py -i ", dataloc$k31.ill.aws[i], ".report -k ~/krakendb/KMER_DISTR.ill.TXT -o ",
+                      dataloc$k31.ill.aws[i], ".bracken.txt"))
+
+
+
+        
         ##nanopore next
         if (!is.na(dataloc$nanopore.fa.aws[i])) {
             system(paste0("~/kraken/kraken --threads 30 --db krakendb/ ", dataloc$nanopore.fa.aws[i], " >", dataloc$k31.nano.aws[i]))
@@ -43,6 +50,10 @@ if (TRUE) {
                           dataloc$k31.nano.aws[i], ".labels"))
             system(paste0("~/kraken/kraken-report --db krakendb/ ", dataloc$k31.nano.aws[i], " >",
                           dataloc$k31.nano.aws[i], ".report"))
+
+            system(paste0("python ~/Bracken/est_abundance.py -i ", dataloc$k31.nano.aws[i], ".report -k ",
+                          "~/krakendb/KMER_DISTR.nano.TXT -o ",
+                          dataloc$k31.nano.aws[i], ".bracken.txt"))
 
         }       
     }
@@ -67,6 +78,11 @@ if (TRUE) {
                       dataloc$k24.ill.aws[i], ".labels"))
         system(paste0("~/kraken/kraken-report --db krakendb/ ", dataloc$k31.ill.aws[i], " >",
                       dataloc$k24.ill.aws[i], ".report"))
+
+        system(paste0("python ~/Bracken/est_abundance.py -i ", dataloc$k24.ill.aws[i], ".report -k ~/krakendb/KMER_DISTR.ill.TXT -o ",
+                      dataloc$k24.ill.aws[i], ".bracken.txt"))
+
+        
         
         
         ##nanopore next
@@ -76,6 +92,10 @@ if (TRUE) {
                           dataloc$k24.nano.aws[i], ".labels"))
             system(paste0("~/kraken/kraken-report --db krakendb/ ", dataloc$k24.nano.aws[i], " >",
                       dataloc$k24.nano.aws[i], ".report"))
+
+            system(paste0("python ~/Bracken/est_abundance.py -i ", dataloc$k24.nano.aws[i], ".report -k ",
+                          "~/krakendb/KMER_DISTR.nano.TXT -o ",
+                          dataloc$k24.nano.aws[i], ".bracken.txt"))
 
         }       
     }

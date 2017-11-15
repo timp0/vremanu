@@ -1,6 +1,6 @@
 #!/bin/bash
 ##using an ubuntu 16.04 lts r4.4xlarge instance, with full upgrade as of 090517
-##also emacs, htop, build-essential, ess
+##also emacs, htop, build-essential, ess, 
 
 
 if [ "$1" == "centrifuge.make" ]; then
@@ -29,7 +29,40 @@ if [ "$1" == "kraken.make" ]; then
 
     conda install -c bioconda blast
 fi
-   
+
+if [ "$1" == "krakenhll.make" ]; then
+    ##Not working, needs gcc-7
+    cd /home/ubuntu/src
+    git clone https://github.com/fbreitwieser/kraken-hll.git
+    cd kraken-hll
+    mkdir -p /home/ubuntu/kraken-hll
+    ./install_kraken.sh /home/ubuntu/kraken-hll    
+fi
+
+if [ "$1" == "ariba.make" ]; then
+    cd /home/ubuntu/
+    mkdir -p ariba
+    cd ariba
+    conda create --name "ariba" python=3.6 
+    source activate ariba
+    conda install -c bioconda bowtie2 cd-hit mummer
+    pip install ariba
+    #ariba getref card out.card
+    source deactivate
+
+fi
+
+if [ "$1" == "ariba.get.card" ]; then
+    
+    cd ~
+    source activate ariba
+    mkdir -p ariba-work
+    cd ariba-work
+    ariba getref card out.card
+    ariba prepareref -f out.card.fa -m out.card.tsv outcard.prepareref
+    source deactivate
+fi
+
 if [ "$1" == "jellyfish.make" ]; then
 
     mkdir -p /home/ubuntu/src/jellyfish
@@ -51,13 +84,17 @@ if [ "$1" == "conda" ]; then
     ##set for this (don't know why but source of .bashrc doesn't work)
     export PATH=/home/ubuntu/miniconda3/bin:$PATH
 
-    conda install -y r-essentials 
+    #conda install -y r-essentials
+
     
 fi
 
 if [ "$1" == "r.pkgs" ]; then
-
-    Rscript ~/vremanu/r_install.R
+    
+    sudo apt install ess R-base
+    sudo apt install libcurl4-openssl-dev libssl-dev libxml2-dev
+    sudo R CMD javareconf
+    sudo Rscript ~/vremanu/r_install.R
     
 fi
 
@@ -66,6 +103,9 @@ fi
 if [ "$1" == "kraken.db.prep" ]; then
     export LD_LIBRARY_PATH="/usr/local/lib"
     cd /home/ubuntu/
+    
+    rm -R ~/krakendb/
+    
     mkdir -p /home/ubuntu/krakendb
     ~/kraken/kraken-build --download-taxonomy --db krakendb
     ~/kraken/kraken-build --download-library bacteria --db krakendb
@@ -92,6 +132,8 @@ if [ "$1" == "kraken.db.k31" ]; then
 
     ~/kraken/kraken-build --threads 30 --build --jellyfish-hash-size 25600M --db krakendb
 
+    aws s3 sync krakendb/ s3://timpawsanalysis/170913_krakendb.masked.fullstd/ 
+
 fi
 
 if [ "$1" == "kraken.db.k24" ]; then
@@ -100,17 +142,70 @@ if [ "$1" == "kraken.db.k24" ]; then
 
     ~/kraken/kraken-build --threads 30 --build --kmer-len 24 --jellyfish-hash-size 25600M --db krakendb
 
+    aws s3 sync krakendb/ s3://timpawsanalysis/170913_krakendb.masked.fullk24/
+    
 fi
 
 if [ "$1" == "kraken.db.tx31" ]; then
+    cd ~    
+    rm -R ~/krakendb/
     aws s3 sync s3://timpawsanalysis/170913_krakendb.masked.fullstd/ krakendb/
-
 fi
 
 if [ "$1" == "kraken.db.tx24" ]; then
+    cd ~    
+    rm -R ~/krakendb/    
     aws s3 sync s3://timpawsanalysis/170913_krakendb.masked.fullk24/ krakendb/
+fi
+
+if [ "$1" == "bracken.make" ]; then
+
+    cd ~
+    git clone https://github.com/jenniferlu717/Bracken.git
+ 
+    sudo cpan -i List::MoreUtils Parallel::ForkManager   
+  
 
 fi
+
+
+if [ "$1" == "bracken.k24" ]; then
+    
+    find -L krakendb/library  -name "*.fna" -o name "*.fa" -o -name "*.fasta" -exec cat {} +  >allseqs.fa    
+    ~/kraken/kraken --db=krakendb --fasta-input --threads=30 \
+	   <( find -L krakendb/library -name "*.fna" -exec cat {} + )  > krakendb/database.kraken
+    perl Bracken/count-kmer-abundances.pl --threads 30 --db=krakendb/ \
+	 --read-length=2000 krakendb/database.kraken > krakendb/database2kmer.kraken_cnts
+
+    perl Bracken/count-kmer-abundances.pl --threads 30 --db=krakendb/ \
+	 --read-length=250 krakendb/database.kraken > krakendb/database250mer.kraken_cnts
+
+    python Bracken/generate_kmer_distribution.py -i krakendb/database2kmer.kraken_cnts -o krakendb/KMER_DISTR.nano.TXT
+    python Bracken/generate_kmer_distribution.py -i krakendb/database250mer.kraken_cnts -o krakendb/KMER_DISTR.ill.TXT
+
+    aws s3 sync krakendb/ s3://timpawsanalysis/170913_krakendb.masked.fullk24/
+    
+fi
+
+if [ "$1" == "bracken.k31" ]; then
+
+    ~/kraken/kraken --db=krakendb --fasta-input --threads=30 \
+	   <( find -L krakendb/library -name "*.fna" -exec cat {} + )  > krakendb/database.kraken
+    perl Bracken/count-kmer-abundances.pl --threads 30 --db=krakendb/ \
+	 --read-length=2000 krakendb/database.kraken > krakendb/database2kmer.kraken_cnts
+
+    perl Bracken/count-kmer-abundances.pl --threads 30 --db=krakendb/ \
+	 --read-length=250 krakendb/database.kraken > krakendb/database250mer.kraken_cnts
+
+    python Bracken/generate_kmer_distribution.py -i krakendb/database2kmer.kraken_cnts -o krakendb/KMER_DISTR.nano.TXT
+    python Bracken/generate_kmer_distribution.py -i krakendb/database250mer.kraken_cnts -o krakendb/KMER_DISTR.ill.TXT
+
+    aws s3 sync krakendb/ s3://timpawsanalysis/170913_krakendb.masked.fullstd/
+
+    
+
+fi
+
 
 
 

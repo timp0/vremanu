@@ -1,6 +1,9 @@
 ##Install needed R pkgs
 
-##source("https://bioconductor.org/biocLite.R") 
 
-##biocLite(c("GenomicAlignments"), ask=FALSE)
-install.packages(c("googlesheets", "ggjoy"), repo="http://cran.wustl.edu/")
+install.packages(c("tidyverse", "googlesheets", "ggjoy"), repo="http://cran.wustl.edu/")
+
+source("https://bioconductor.org/biocLite.R") 
+
+biocLite(c("ontoCAT", "GenomicAlignments"), ask=FALSE)
+
