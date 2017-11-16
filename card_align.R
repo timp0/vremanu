@@ -67,19 +67,15 @@ if (TRUE) {
         #paste0(dataloc$ill.card[i], ".bam")))))
 
         ##Blast reads against CARD
-        cat 160223_VRE7_recall_2dhq.fa | parallel --block 100k --recstart '>' --pipe \
-        blastn -db CARDblast -query - -gapopen 1 -gapextend 2 -word_size 9 -reward 1 -evalue 10 \
-        -outfmt '"6 qseqid sseqid pident length qlen slen evalue bitscore"' > nanoblast2
-        
-        
-
-
+     
         ##nanopore next
         if (!is.na(dataloc$nanopore.fa.aws[i])) {
             system(paste0("/bin/bash -c ", shQuote(paste0("source activate mappers; ",
-                                                          "minimap2 -a -x map-ont -t 30 ~/carddb/card_homolog.mmi ",
-                                                          dataloc$nanopore.fa.aws[i], " | samtools view -b - | samtools sort -o ",
-                                                          paste0(dataloc$nano.card[i], ".bam")))))
+                                                          "blastn -db ~/carddb/CARDblast -num_threads 30 ",
+                                                          "-query ", dataloc$nanopore.fa.aws[i],
+                                                          " -gapopen 1 -gapextend 2 -word_size 9 -reward 1 -evalue 10 ",
+                                                          "-outfmt '6 qseqid sseqid pident length qlen slen evalue bitscore' >",
+                                                          paste0(dataloc$nano.card[i], ".blast")))))
         }       
     }
 
