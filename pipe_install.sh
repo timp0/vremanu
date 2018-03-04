@@ -2,19 +2,39 @@
 ##using an ubuntu 16.04 lts r4.4xlarge instance, with full upgrade as of 090517
 ##also emacs, htop, build-essential, ess, 
 
+if [ "$1" == "conda" ]; then
 
-if [ "$1" == "centrifuge.make" ]; then
-    cd /home/ubuntu
-    git clone https://github.com/infphilo/centrifuge
-    make
-    sudo make install prefix=/usr/local    
-
+    sudo apt install awscli
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh -b
+    ##Set forever
+    echo 'export PATH=/home/ubuntu/miniconda3/bin:$PATH' >> .bashrc
+    ##set for this (don't know why but source of .bashrc doesn't work)
+    export PATH=/home/ubuntu/miniconda3/bin:$PATH
+   
 fi
 
-if [ "$1" == "centrifuge.stdidx" ]; then
-    cd /home/ubuntu/centrifuge/indices
-    make p+h+v
+
+if [ "$1" == "r.pkgs" ]; then
     
+    sudo apt install ess r-base
+    sudo apt install libcurl4-openssl-dev libssl-dev libxml2-dev default-jdk
+    sudo R CMD javareconf
+    sudo Rscript ~/vremanu/r_install.R
+    
+fi
+
+
+if [ "$1" == "jellyfish.make" ]; then
+
+    mkdir -p /home/ubuntu/src/jellyfish
+    cd /home/ubuntu/src/jellyfish
+    wget http://www.cbcb.umd.edu/software/jellyfish/jellyfish-1.1.11.tar.gz
+    tar -xzf jellyfish-1.1.11.tar.gz
+    cd jellyfish-1.1.11
+    ./configure
+    make
+    sudo make install
 fi
 
 
@@ -30,72 +50,14 @@ if [ "$1" == "kraken.make" ]; then
     conda install -c bioconda blast
 fi
 
-if [ "$1" == "krakenhll.make" ]; then
-    ##Not working, needs gcc-7
-    cd /home/ubuntu/src
-    git clone https://github.com/fbreitwieser/kraken-hll.git
-    cd kraken-hll
-    mkdir -p /home/ubuntu/kraken-hll
-    ./install_kraken.sh /home/ubuntu/kraken-hll    
-fi
+if [ "$1" == "bracken.make" ]; then
 
-if [ "$1" == "ariba.make" ]; then
-    cd /home/ubuntu/
-    mkdir -p ariba
-    cd ariba
-    conda create --name "ariba" python=3.6 
-    source activate ariba
-    conda install -c bioconda bowtie2 cd-hit mummer
-    pip install ariba
-    #ariba getref card out.card
-    source deactivate
-
-fi
-
-if [ "$1" == "ariba.get.card" ]; then
-    
     cd ~
-    source activate ariba
-    mkdir -p ariba-work
-    cd ariba-work
-    ariba getref card out.card
-    ariba prepareref -f out.card.fa -m out.card.tsv outcard.prepareref
-    source deactivate
-fi
+    git clone https://github.com/jenniferlu717/Bracken.git
+ 
+    sudo cpan -i List::MoreUtils Parallel::ForkManager   
+  
 
-if [ "$1" == "jellyfish.make" ]; then
-
-    mkdir -p /home/ubuntu/src/jellyfish
-    cd /home/ubuntu/src/jellyfish
-    wget http://www.cbcb.umd.edu/software/jellyfish/jellyfish-1.1.11.tar.gz
-    tar -xzf jellyfish-1.1.11.tar.gz
-    cd jellyfish-1.1.11
-    ./configure
-    make
-    sudo make install
-fi
-
-if [ "$1" == "conda" ]; then
-
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-    bash Miniconda3-latest-Linux-x86_64.sh -b
-    ##Set forever
-    echo 'export PATH=/home/ubuntu/miniconda3/bin:$PATH' >> .bashrc
-    ##set for this (don't know why but source of .bashrc doesn't work)
-    export PATH=/home/ubuntu/miniconda3/bin:$PATH
-
-    #conda install -y r-essentials
-
-    
-fi
-
-if [ "$1" == "r.pkgs" ]; then
-    
-    sudo apt install ess R-base
-    sudo apt install libcurl4-openssl-dev libssl-dev libxml2-dev
-    sudo R CMD javareconf
-    sudo Rscript ~/vremanu/r_install.R
-    
 fi
 
 
@@ -156,16 +118,6 @@ if [ "$1" == "kraken.db.tx24" ]; then
     cd ~    
     rm -R ~/krakendb/    
     aws s3 sync s3://timpawsanalysis/170913_krakendb.masked.fullk24/ krakendb/
-fi
-
-if [ "$1" == "bracken.make" ]; then
-
-    cd ~
-    git clone https://github.com/jenniferlu717/Bracken.git
- 
-    sudo cpan -i List::MoreUtils Parallel::ForkManager   
-  
-
 fi
 
 
