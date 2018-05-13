@@ -1,9 +1,11 @@
 library(tidyverse)
 library(googlesheets)
-library(phyloseq)
+#library(phyloseq)
+library(vegan)
+
 
 workdir="~/Data/kraken"
-plotdir="~/Data/plots"
+plotdir="~/Dropbox/Data/Nanopore/180303_vre"
 dir.create(plotdir, recursive=T)
 
 gs_auth(token = "~/googlesheets_token.rds")
@@ -25,20 +27,16 @@ read_kraken_report <- function(samp.list) {
     return(krak.report)
 }
 
-
-
-plot_stacked <- function(samp.list, plotdir, namey) {
-
-    krak.report=read_kraken_report(samp.list)
+filter_krak_report <- function(krak.report, numtop=2) {
     
     ##ok - for first pass, let's try filtering by "species" or S in rank.code
     ##per.reads is of total reads, not the subsection of bacteria or just classified, as opposed to how pavian does it
     ##We also want .clade reads because that takes all the subspecies/strains - otherwise it will undercall because of subspecies
     
-    ##Sort for top 2
+    ##Sort for top 2 not human
     krak.top=filter(krak.report, (rank.code=="S" & sci.name!="Homo sapiens")) %>%
         group_by(sample) %>%
-        top_n(n=2, wt=num.reads.clade) %>%
+        top_n(n=numtop, wt=num.reads.clade) %>%
         ungroup %>%
         select(sci.name, ncbi.tax.id) %>%
         distinct
@@ -69,12 +67,6 @@ plot_stacked <- function(samp.list, plotdir, namey) {
                        filter(krak.report, rank.code=="D", ncbi.tax.id!=2, ncbi.tax.id!=2759) %>%
                        select(sample, sci.name, num.reads.clade))
     
-    ##per group unclass hits
-    ##Unclass just means save U
-    #plot.res=bind_rows(plot.res,
-    #                   filter(krak.report, rank.code=="U") %>%
-    #                   select(sample, sci.name, num.reads.clade))
-    
     
     ##Finally our actual hits of interest
     plot.res=bind_rows(plot.res,
@@ -86,30 +78,32 @@ plot_stacked <- function(samp.list, plotdir, namey) {
         group_by(sample) %>%
         arrange(sample, desc(num.reads.clade)) %>%
         mutate(per.reads=round(100*num.reads.clade/sum(num.reads.clade), 2))
-    
-   
-    ##Double check per.reads adds up to 100
-    plot.res %>%
-        group_by(sample) %>%
-        summarize(n=sum(per.reads))
-    ##Pretty close - rounding errors only
+
 
     ##fix x-axis order so VRE10 on the end
     plot.res$sample=factor(plot.res$sample, levels=samp.list$sample)
+
     
     ##Fix y-axis order
     yorder=c("unclassified", "Other bacteria", "Homo sapiens", "Archaea", "Viruses", krak.top$sci.name)
     plot.res$sci.name=factor(plot.res$sci.name, levels=yorder)
 
+   
+    return(plot.res)
+    
+}
+
+
+
+plot_stacked <- function(plot.res, plotdir, namey) {
+    krak.report=read_kraken_report(samp.list)    
+    
+    plot.res=filter_krak_report(krak.report)    
+
     plot.res=plot.res %>%
         arrange(sample, sci.name)
-
-    
-    ##Better color scheme still
-    ##Human reads
-    ##reorder so that blocks are all sorted in same order - some order we define, like unclass, other bac, archae, virus,
-    ##then our bac of interest
-    ##Italize bacteria
+   
+    ##Italize bacteria(?)
     pdf(file.path(plotdir, paste0(namey, '.pdf')), width=11, height=8.5)
     
     print(ggplot(plot.res, aes(x=sample, y=per.reads, fill=sci.name))+geom_bar(color="black", stat='identity')+
@@ -131,55 +125,113 @@ if (TRUE) {
         select(sample, k31.ill.aws) %>%
         rename(krak.file=k31.ill.aws) %>%
         mutate(filey=paste0(krak.file, ".report"))
+
+    plot_stacked(samp.list, plotdir, 'stack_k31_ill1b')
+
+    krak.report=read_kraken_report(samp.list)    
     
+    plot.res=filter_krak_report(krak.report, numtop=10)    
     
-    plot_stacked(samp.list, plotdir, 'stack_k31_ill1')
+    try=plot.res %>%
+        select(sample, sci.name, num.reads.clade) %>%
+        spread(sci.name, num.reads.clade, fill=0)
+            
+    z=as.matrix(try[,-1])
+
+    vegdist(z)
+    diversity(z)
+
+    ##Ok - figure out ways to plot alpha diversity, bray-curtis similarity, clustering to see if things from nanopore
+    ##And illumina show same result?
+
+    ##Figure out comparsion besides plot
+
+    ##Should I bother trying to use centrifuge results?  Not clear
     
+    ##Bracken
+    samp.list=dataloc %>%
+        select(sample, k31.ill.aws) %>%
+        rename(krak.file=k31.ill.aws) %>%
+        mutate(filey=paste0(krak.file, "_bracken.report"))
+    brack.report=read_kraken_report(samp.list)
+
+    plot.res=filter_krak_report(brack.report)
+    
+    plot_stacked(plot.res, plotdir, 'stack_k31_ill_bracken1a')
+
+    ##Ill 24 k-mer
+    samp.list=dataloc %>%
+        select(sample, k24.ill.aws) %>%
+        rename(krak.file=k24.ill.aws) %>%
+        mutate(filey=paste0(krak.file, "_bracken.report"))
+    brack.report=read_kraken_report(samp.list)
+    
+    plot.res=filter_krak_report(brack.report)
+    
+    plot_stacked(plot.res, plotdir, 'stack_k24_ill_bracken1a')
+
     samp.list=dataloc %>%
         select(sample, k24.ill.aws) %>%
         rename(krak.file=k24.ill.aws) %>%
         mutate(filey=paste0(krak.file, ".report"))
+    krak.report=read_kraken_report(samp.list)
     
-    plot_stacked(samp.list, plotdir, 'stack_k24_ill1')
+    plot.res=filter_krak_report(krak.report)
     
+    plot_stacked(plot.res, plotdir, 'stack_k24_ill1')
+
+
+    ##Nanopore    
     samp.list=dataloc %>%
         filter(!is.na(k31.nano.aws)) %>%
         select(sample, k31.nano.aws) %>%
         rename(krak.file=k31.nano.aws) %>%
         mutate(filey=paste0(krak.file, ".report"))
+    krak.report=read_kraken_report(samp.list)
+
+    plot.res=filter_krak_report(krak.report)
     
-    plot_stacked(samp.list, plotdir, 'stack_k31_nano1')
+    plot_stacked(plot.res, plotdir, 'stack_k31_nano1')
+
+
+    samp.list=dataloc %>%
+        filter(!is.na(k31.nano.aws)) %>%
+        select(sample, k31.nano.aws) %>%
+        rename(krak.file=k31.nano.aws) %>%
+        mutate(filey=paste0(krak.file, "_bracken.report"))
+    krak.report=read_kraken_report(samp.list)
+
+    plot.res=filter_krak_report(krak.report)
     
+    plot_stacked(plot.res, plotdir, 'stack_k31_bracken_nano1')
+
+
+    
+    ##K24 nanopore
     samp.list=dataloc %>%
         filter(!is.na(k24.nano.aws)) %>%
         select(sample, k24.nano.aws) %>%
         rename(krak.file=k24.nano.aws) %>%
         mutate(filey=paste0(krak.file, ".report"))
+    krak.report=read_kraken_report(samp.list)
+
+    plot.res=filter_krak_report(krak.report)
     
-    plot_stacked(samp.list, plotdir, 'stack_k24_nano1')
+    plot_stacked(plot.res, plotdir, 'stack_k24_nano1')
+
+    ##Rerun bracken on nanopore k24
+    ##K24 nanopore
+    samp.list=dataloc %>%
+        filter(!is.na(k24.nano.aws)) %>%
+        select(sample, k24.nano.aws) %>%
+        rename(krak.file=k24.nano.aws) %>%
+        mutate(filey=paste0(krak.file, "_bracken.report"))
+    krak.report=read_kraken_report(samp.list)
+
+    plot.res=filter_krak_report(krak.report)
+    
+    plot_stacked(plot.res, plotdir, 'stack_k24_bracken_nano1')
+
     
 }
 
-if (TRUE) {
-
-
-
-    ##take first 10 for now
-    
-    kraken.report.list=paste(paste0(dataloc$k31.ill.aws[1:10], ".report"), collapse=" ")
-
-    system(paste0("/bin/bash -c ", shQuote(paste0("source activate qiime2-2017.9; ",
-                                                  "kraken-biom ", kraken.report.list, " -o ~/Data/kraken/try.biom ",
-                                                  "--otu_fp ~/Data/kraken/try.outfp"))))
-
-    system(paste0("/bin/bash -c ", shQuote(paste0("source activate qiime2-2017.9; ",
-                                                  "qiime tools import --input-path ~/Data/kraken/try.biom ",
-                                                  "--type 'FeatureTable[Frequency]' ",
-                                                  "--source-format BIOMV210Format ",
-                                                  "--output-path try.qza"))))
-
-    
-
-    z=import_biom("~/Data/kraken/try.biom")
-
-}

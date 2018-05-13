@@ -82,7 +82,7 @@ tstep=100
 tmax=1000
 
 saveVideo({
-    for (i in tstep:tstep:tmax) {
+    for (i in seq(from=1, to=1001, by=100)) {
         temp.dat=plot.dat %>%
             filter(minute<i)
         print(ggplot(temp.dat, aes(x=factor(1), fill=tax.name))+geom_bar(color="black")+coord_polar(theta="y"))        
