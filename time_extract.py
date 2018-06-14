@@ -138,12 +138,10 @@ files=0
 
 for member in tarball.getmembers():
     if member.isreg():
-        if ("pass" in member.name) and (".fast5" in member.name):
+        if (".fast5" in member.name):
             member.name=os.path.basename(member.name)
             tarball.extract(member,tmpdir)
             files += 1
-            if files > 50:
-                break
 
 
 
